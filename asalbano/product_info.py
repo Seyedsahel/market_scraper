@@ -1,9 +1,11 @@
 from bs4 import BeautifulSoup
 import requests
 from csv_writer import *
+from json_writer import *
 from requests.exceptions import ConnectTimeout, Timeout, RequestException
 import os
 import csv
+import re
 
 product_info=[]
 
@@ -52,48 +54,70 @@ def info_scraper(category,urls):
                         st = False
                         status = "stock"
 
-                    #price
-                    price = ""
-                    price = soup.find('p' , class_="price")
-                    if price:
-                        price = price.text
-
                     # des
                     des =""
                     des = soup.find("div", class_="wpb_wrapper")
                     if des:
                         des = des.text
 
+                    #price
+                    price = ""
+                    price = soup.find('p' , class_="price")
+                    if price:
+                        price = price.text
+                        price = extract_and_convert_price(price)
+
                     # Feature for non perfume
-                    feature = ""
+                    non_perfume_feature = []
+                    non_perfume_dict_feature = {}
                     div = soup.find('div' , class_="woocommerce-product-details__short-description")
                     if div:
-                        ol = div.find('ol')
-                        if ol :
-                            feature += ol.text
+                        ps = div.find_all('p')
+                        if ps:
+                            ps = [item.text[2:] for item in ps[1:]]
+                            non_perfume_feature = ps
+                        else:
+                            ol = div.find('ol')
+                            if ol :
+                                ol = ol.find_all('li')
+                                for li in ol:
+                                    non_perfume_feature.append(li.text)
                         if st == False:
                             ul = div.find('ul')
                             if ul:
-                                feature += ul.text
+                                ul = ul.find_all('li')
+                                if ul:
+                                    for li in ul:
+                                        key = li.find('strong')
+                                        if key:
+                                            key = key.text
+                                            value = ""
+                                            value = li.find(string=True, recursive=False)
+                                            if value:
+                                                non_perfume_dict_feature[key.replace(u'\xa0',' ')] = value.replace(u'\xa0',' ')
 
                     # feature for perfume
+                    perfume_feature = ""
                     div = soup.find('div', class_="woocommerce-product-details__short-description")
                     if div:
                         table = div.find("table")
                         if table:
-                            table_contents = []
+                            table_contents = {}
                             for row in table.find_all('tr'):
                                 columns = row.find_all(['th', 'td'])
-                                row_data = [col.get_text(strip=True) for col in columns]
-                                table_contents.append(' : '.join(row_data))
+                                if len(columns) >= 2:  
+                                    key = columns[0].get_text(strip=True)
+                                    value = columns[1].get_text(strip=True)
+                                    table_contents[key] = value
 
-                            feature = '-'.join(table_contents)
+                            perfume_feature = table_contents
+
 
                     #brand
                     div = soup.find('div', class_="pwb-single-product-brands pwb-clearfix")
                     if div:
-                        keybr = div.find('span').text
-                        valbr = div.find('a').text
+                        brand = div.find('a').text
+        
 
                     # cats
                     cats = soup.find('nav' , class_="woocommerce-breadcrumb")
@@ -117,9 +141,38 @@ def info_scraper(category,urls):
 
                     # print(f"{categories}\n,{title}\n,{product_slug}\n,{price}\n,{des}\n,{feature}\n,{status}\n,{feature}\n")
 
-
-                product_info = [title,product_slug,price,des,feature,img,status,categories,url]
-                csv_writer(product_info)
+                if perfume_feature:
+                    product_info_for_csv = [title,product_slug,price,des,perfume_feature,"",brand,img,status,categories,url]
+                    product_info_for_json = {
+                    "titleFa" : title,
+                    "titleEn" : product_slug,
+                    "price" : price,
+                    "des" : des,
+                    "perfume_feature" : perfume_feature,
+                    "brand" : brand,
+                    "img" : img,
+                    "status" : status,
+                    "categories" :categories,
+                    }
+                else:
+                    product_info_for_csv = [title,product_slug,price,des,non_perfume_feature,non_perfume_dict_feature,brand,img,status,categories,url]
+                    product_info_for_json = {
+                    "titleFa" : title,
+                    "titleEn" : product_slug,
+                    "price" : price,
+                    "des" : des,
+                    "non_perfume_feature" : non_perfume_feature,
+                    "non_perfume_dict_feature" : non_perfume_dict_feature,
+                    "brand" : brand,
+                    "img" : img,
+                    "status" : status,
+                    "categories" :categories,
+                    }
+                
+                    
+                
+                csv_writer(product_info_for_csv)
+                json_writer(product_info_for_json)
 
             else:
                 print(f"شناسه محصول {product_slug} قبلاً در {filename} وجود دارد. در حال نادیده گرفتن.")
@@ -143,3 +196,12 @@ def product_exists_in_csv(product_slug, filename='products.csv'):
             if product_slug in row:
                 return True
     return False
+
+
+def extract_and_convert_price(text):
+    match = re.search(r'(\d{1,3}(?:,\d{3})*)', text)
+    if match:
+        number_str = match.group(1).replace(',', '')
+        converted_number = int(number_str) * 10
+        return converted_number
+    return None

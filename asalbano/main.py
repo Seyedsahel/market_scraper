@@ -6,7 +6,7 @@ def main():
 
     base_cats_links = {
 
-        'cosmetic': 'https://asalbanooshop.com/product-category/cosmetic/',
+        'cosmetic':'https://asalbanooshop.com/product-category/cosmetic/',
     }
 
     products = product_urls(base_cats_links)
