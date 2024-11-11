@@ -5,9 +5,7 @@ from product_info import *
 def main():
 
     base_cats_links = {
-
-        'cosmetic':'https://asalbanooshop.com/product-category/cosmetic/',
-    }
+ 'skin-products':'https://asalbanooshop.com/product-category/skin-products/',  }
 
     products = product_urls(base_cats_links)
     # print(products)
@@ -19,6 +17,6 @@ if __name__ == "__main__":
     main()
 
 #  'cosmetic':'https://asalbanooshop.com/product-category/cosmetic/',
-#        'hair-products':'https://asalbanooshop.com/product-category/hair-products',
+#        'hair-products':'https://asalbanooshop.com/product-category/hair-products/',
 #        'skin-products':'https://asalbanooshop.com/product-category/skin-products/',
 # 'perfume':'https://asalbanooshop.com/product-category/perfume/',

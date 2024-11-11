@@ -1,24 +1,16 @@
-import csv
 import json
 from datetime import datetime
-import re
 
 def json_writer(main_product):
-    products = []
-
     now = datetime.utcnow()
-    #   product_info_for_json = {
-    #                 "titleFa" : title,
-    #                 "titleEn" : product_slug,
-    #                 "price" : price,
-    #                 "des" : des,
-    #                 "non_perfume_feature" : non_perfume_feature,
-    #                 "non_perfume_dict_feature" : non_perfume_dict_feature,
-    #                 "brand" : brand,
-    #                 "img" : img,
-    #                 "status" : status,
-    #                 "categories" :categories,
-    #                 }
+
+    
+    try:
+        with open("products.json", mode='r', encoding='utf-8') as json_file:
+            products = json.load(json_file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        products = []  
+
     product = {}
     if "non_perfume_feature" in main_product:    
         product = {
@@ -34,8 +26,10 @@ def json_writer(main_product):
             "category": [],  
             "slug": main_product["titleEn"],
             "specifications": [
-            {"keyFa": "ویژگی :", "valueFa": feature} for feature in main_product["non_perfume_feature"]] + [
-            {"keyFa": key, "valueFa": value} for key, value in main_product["non_perfume_dict_feature"].items()],
+                {"keyFa": "ویژگی :", "valueFa": feature} for feature in main_product["non_perfume_feature"]
+            ] + [
+                {"keyFa": key, "valueFa": value} for key, value in main_product["non_perfume_dict_feature"].items()
+            ],
             "productItems": [
                 {
                     "price": (main_product['price']),
@@ -57,7 +51,7 @@ def json_writer(main_product):
             "updatedAt": {"$date": str(now)},
             "updatedBy": "6663f1229852d521309b7b84",
             "token": "0830OO0I01",
-            "__asal":True,
+            "__asal": True,
             "published": False,
             "isPublishForTorob": False
         }
@@ -99,14 +93,12 @@ def json_writer(main_product):
             "updatedAt": {"$date": str(now)},
             "updatedBy": "6663f1229852d521309b7b84",
             "token": "0830OO0I01",
-            "__asal":True,
+            "__asal": True,
             "published": False,
             "isPublishForTorob": False
         }
         products.append(product)
 
-
     
-    with open("products.json", mode='a', encoding='utf-8') as json_file:
+    with open("products.json", mode='w', encoding='utf-8') as json_file:
         json.dump(products, json_file, ensure_ascii=False, indent=4)
-
