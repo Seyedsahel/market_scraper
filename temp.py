@@ -4,6 +4,8 @@ import re
 import json
 
 
+
+
 def extract_and_convert_price(text):
     match = re.search(r'(\d{1,3}(?:,\d{3})*)', text)
     if match:
